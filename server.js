@@ -51,61 +51,32 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// app.post("/api/order", async (req, res) => {
-//   try {
-//     const { customerName, whatsappNumber, address, timing, orders } = req.body;
+// ADD THIS TEST ROUTE FOR WHATSAPP
+app.get("/api/test-whatsapp", async (req, res) => {
+  try {
+    const ownerNumber = process.env.OWNER_NUMBER;
+    const testMessage = `🔧 TEST MESSAGE\n\nThis is a test from your order system!\nTime: ${new Date().toLocaleString()}`;
 
-//     // Validate required fields
-//     if (!customerName || !whatsappNumber || !address || !timing || !orders) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "All fields are required.",
-//       });
-//     }
+    console.log("📤 Sending test message to:", ownerNumber);
 
-//     // Save to MongoDB
-//     const newOrder = new Order({
-//       customerName,
-//       whatsappNumber: whatsappNumber.replace(/\s/g, ""),
-//       address,
-//       timing,
-//       orders,
-//     });
+    // Send test message to owner
+    await client.sendMessage(ownerNumber, testMessage);
 
-//     await newOrder.save();
-//     console.log("✅ Order saved to database:", newOrder._id);
+    res.json({
+      success: true,
+      message: "Test message sent to owner! Check your WhatsApp.",
+    });
+  } catch (error) {
+    console.error("WhatsApp test error:", error);
+    res.json({
+      success: false,
+      message: "Failed to send test message",
+      error: error.message,
+    });
+  }
+});
 
-//     // Format numbers for WhatsApp
-//     const ownerNumber = process.env.OWNER_NUMBER; // Should be "919434132014@c.us"
-//     const customerNumber = `${whatsappNumber.replace(/\s/g, "")}@c.us`;
-
-//     // Create messages
-//     const ownerMessage = `📦 *NEW ORDER RECEIVED* 📦\n\n👤 *Customer:* ${customerName}\n📞 *WhatsApp:* ${whatsappNumber}\n🏠 *Address:* ${address}\n⏰ *Timing:* ${timing}\n📋 *Orders:* ${orders}\n\n🕒 *Order Time:* ${new Date().toLocaleString()}`;
-
-//     const customerMessage = `✅ *Order Confirmed!*\n\nThank you ${customerName}! Your order has been received.\n\n📋 *Orders:* ${orders}\n⏰ *Timing:* ${timing}\n🏠 *Address:* ${address}\n\nWe'll contact you shortly on this number.`;
-
-//     // Send to Owner
-//     await client.sendMessage(ownerNumber, ownerMessage);
-//     console.log("📤 Message sent to owner");
-
-//     // Send to Customer
-//     await client.sendMessage(customerNumber, customerMessage);
-//     console.log("📤 Confirmation sent to customer");
-
-//     res.json({
-//       success: true,
-//       message: "Order placed successfully! Check WhatsApp for confirmation.",
-//     });
-//   } catch (error) {
-//     console.error("Order error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Error placing order. Please try again.",
-//       error: error.message,
-//     });
-//   }
-// });
-
+// ORDER ROUTE (keep only this one, remove the commented version)
 app.post("/api/order", async (req, res) => {
   try {
     const { customerName, whatsappNumber, address, timing, orders } = req.body;
@@ -161,6 +132,9 @@ app.post("/api/order", async (req, res) => {
     const ownerNumber = process.env.OWNER_NUMBER;
     const customerNumber = `${cleanWhatsappNumber}@c.us`;
 
+    console.log("📤 Sending to owner:", ownerNumber);
+    console.log("📤 Sending to customer:", customerNumber);
+
     // Create messages
     const ownerMessage = `📦 *NEW ORDER RECEIVED* 📦\n\n👤 *Customer:* ${customerName}\n📞 *WhatsApp:* +${cleanWhatsappNumber}\n🏠 *Address:* ${address}\n⏰ *Timing:* ${timing}\n📋 *Orders:* ${orders}\n\n🕒 *Order Time:* ${new Date().toLocaleString()}`;
 
@@ -187,6 +161,7 @@ app.post("/api/order", async (req, res) => {
     });
   }
 });
+
 // Add a test route to check MongoDB connection
 app.get("/api/test", async (req, res) => {
   try {
@@ -215,10 +190,13 @@ mongoose
   .then(() => {
     console.log("✅ Connected to MongoDB");
     const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📝 Test the app: http://localhost:${PORT}`);
       console.log(`🔧 API Test: http://localhost:${PORT}/api/test`);
+      console.log(
+        `📱 WhatsApp Test: http://localhost:${PORT}/api/test-whatsapp`
+      );
     });
   })
   .catch((err) => {
