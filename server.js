@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
 const path = require("path");
-const qrCode = require("qrcode");
 require("dotenv").config();
 
 const app = express();
@@ -32,27 +31,9 @@ const client = new Client({
   },
 });
 
-const qrCode = require("qrcode"); // ADD THIS AT THE TOP WITH OTHER IMPORTS
-
-// ... your other code ...
-
 client.on("qr", (qr) => {
-  console.log("📱 QR Code generated!");
-
-  // Display in terminal
+  console.log("📱 Scan this QR code with WhatsApp:");
   qrcode.generate(qr, { small: true });
-
-  // Also create a URL for easier scanning
-  qrCode.toDataURL(qr, (err, url) => {
-    if (!err) {
-      console.log("🔗 Alternative QR URL (copy and open in browser):");
-      console.log(
-        `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-          qr
-        )}`
-      );
-    }
-  });
 });
 
 client.on("ready", () => {
@@ -108,7 +89,7 @@ app.post("/api/order", async (req, res) => {
       });
     }
 
-    // Validate phone number (should start with 91 and have 12 digits total)
+    // Validate phone number
     const cleanWhatsappNumber = whatsappNumber.replace(/\s/g, "");
     if (
       !cleanWhatsappNumber.startsWith("91") ||
@@ -120,7 +101,7 @@ app.post("/api/order", async (req, res) => {
       });
     }
 
-    // ✅ DUPLICATE CHECK: Prevent same order within 2 minutes
+    // ✅ DUPLICATE CHECK
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
     const recentOrder = await Order.findOne({
       whatsappNumber: cleanWhatsappNumber,
@@ -147,7 +128,15 @@ app.post("/api/order", async (req, res) => {
     await newOrder.save();
     console.log("✅ Order saved to database:", newOrder._id);
 
-    // Format numbers for WhatsApp (already has 91 prefix)
+    // ⚠️ CHECK IF WHATSAPP IS READY BEFORE SENDING
+    if (!client.info) {
+      return res.status(503).json({
+        success: false,
+        message: "WhatsApp is not ready yet. Please try again in a moment.",
+      });
+    }
+
+    // Format numbers for WhatsApp
     const ownerNumber = process.env.OWNER_NUMBER;
     const customerNumber = `${cleanWhatsappNumber}@c.us`;
 
