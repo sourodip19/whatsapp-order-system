@@ -1,3 +1,4 @@
+const qrCode = require("qrcode"); 
 const express = require("express");
 const mongoose = require("mongoose");
 const { Client, LocalAuth } = require("whatsapp-web.js");
@@ -31,9 +32,31 @@ const client = new Client({
   },
 });
 
+// client.on("qr", (qr) => {
+//   console.log("📱 Scan this QR code with WhatsApp:");
+//   qrcode.generate(qr, { small: true });
+// });
+
+
+// ... your other code ...
+
 client.on("qr", (qr) => {
-  console.log("📱 Scan this QR code with WhatsApp:");
+  console.log("📱 QR Code generated!");
+
+  // Display in terminal
   qrcode.generate(qr, { small: true });
+
+  // Also create a URL for easier scanning
+  qrCode.toDataURL(qr, (err, url) => {
+    if (!err) {
+      console.log("🔗 Alternative QR URL (copy and open in browser):");
+      console.log(
+        `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+          qr
+        )}`
+      );
+    }
+  });
 });
 
 client.on("ready", () => {
