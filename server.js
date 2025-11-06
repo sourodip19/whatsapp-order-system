@@ -40,23 +40,30 @@ const client = new Client({
 
 // ... your other code ...
 
-client.on("qr", (qr) => {
-  console.log("📱 QR Code generated!");
+client.on("qr", async (qr) => {
+  console.log("\n📱 QR Code generated!");
+  console.log("═══════════════════════════════════════");
 
   // Display in terminal
   qrcode.generate(qr, { small: true });
 
-  // Also create a URL for easier scanning
-  qrCode.toDataURL(qr, (err, url) => {
-    if (!err) {
-      console.log("🔗 Alternative QR URL (copy and open in browser):");
-      console.log(
-        `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-          qr
-        )}`
-      );
-    }
-  });
+  console.log("═══════════════════════════════════════");
+
+  // Generate and display the QR URL
+  try {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+      qr
+    )}`;
+    console.log("🔗 Scan this QR URL:");
+    console.log(qrUrl);
+    console.log("\n📱 Instructions:");
+    console.log("1. Copy the URL above");
+    console.log("2. Open it on your phone browser");
+    console.log("3. Scan the QR with WhatsApp");
+    console.log("4. Or scan the terminal QR above");
+  } catch (err) {
+    console.log("❌ Could not generate QR URL");
+  }
 });
 
 client.on("ready", () => {
